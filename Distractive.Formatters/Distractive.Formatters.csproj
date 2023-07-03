@@ -3,7 +3,19 @@
 		<TargetFrameworks>net6.0;netstandard2.0;netstandard2.1</TargetFrameworks>
 		<Nullable>enable</Nullable>
 		<LangVersion>10</LangVersion>
+		<GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+		<Authors>Distractive Team</Authors>
+		<PackageTags>thai;baht;text;formatter</PackageTags>
+		<PackageProjectUrl>https://github.com/DistractiveTeam/Distractive.Formatters</PackageProjectUrl>
+		<PackageIcon>icons8-hiragana-ma-100.png</PackageIcon>
+		<RepositoryUrl>https://github.com/DistractiveTeam/Distractive.Formatters.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
+	<ItemGroup>
+	  <None Remove="icons8-hiragana-ma-100.png" />
+	</ItemGroup>
 	<ItemGroup>
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
 			<_Parameter1>Distractive.Formatters.Benchmark</_Parameter1>
@@ -15,5 +27,9 @@
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
 		<PackageReference Include="IndexRange" Version="1.0.1" />
 		<PackageReference Include="System.Memory" Version="4.5.4" />
+	</ItemGroup>
+	<ItemGroup>
+	  <None Include="icons8-hiragana-ma-100.png" Pack="true" PackagePath="\"/>	
+	  <None Include="README.md" Pack="true" PackagePath="\"/>
 	</ItemGroup>
 </Project>
