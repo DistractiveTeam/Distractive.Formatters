@@ -15,16 +15,11 @@ namespace Distractive.Formatters.Benchmark
     //[EventPipeProfiler(EventPipeProfile.CpuSampling)]
     public class ThaiBahtTextCompare
     {
-        private decimal[] decimals = new decimal[] { 0 };
-        private string[] decimalStrings = new[] { "" };
+        private static decimal[] decimals = GetDecimals(50000).ToArray();
+
         private int idx;
-        [GlobalSetup]
-        public void Setup()
-        {
-            decimals = GetDecimals(50000).ToArray();
-            decimalStrings = decimals.Select(i => i.ToString()).ToArray();
-        }
-        private IEnumerable<decimal> GetDecimals(int count)
+        
+        private static IEnumerable<decimal> GetDecimals(int count)
         {
             Random random1 = new Random(123456);
             for (int i = 0; i < count; i++)
@@ -46,21 +41,27 @@ namespace Distractive.Formatters.Benchmark
         private string GetNextDecimalString()
         {
             if (idx == 0) idx = decimals.Length;
-            return decimalStrings[--idx];
-            ReadOnlySpan<char> mySpan = "";
+            return decimalStrings[--idx];            
         }
 
-
-        [Benchmark(Baseline = true)]
-        [ArgumentsSource(nameof(GetNextDecimal))]
-        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());
-        
-        private ThaiNumberTextFormatter formatter = new();
+        private readonly ThaiNumberTextFormatter formatter = new();
         [Benchmark]
         [ArgumentsSource(nameof(GetNextDecimal))]
         public string Distractive() => formatter.GetBahtText(GetNextDecimal());
 
+        [Benchmark(Baseline = true)]
+        [ArgumentsSource(nameof(GetNextDecimal))]
+        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());
+
+        private string[] decimalStrings = new[] { "" };
         private NumToThaiTextConverter numToThaiText = new();
+
+        [GlobalSetup(Target = nameof(NumberToThaiText))]
+        public void Setup()
+        {
+            decimalStrings = decimals.Select(i => i.ToString()).ToArray();
+        }        
+
         [Benchmark]
         [ArgumentsSource(nameof(GetNextDecimal))]
         public object NumberToThaiText() => numToThaiText.Convert(GetNextDecimalString(), true, true);
