@@ -195,9 +195,6 @@ public sealed class ThaiNumberTextFormatter
         decimal dec = value - longValue;
         int satang = (int)(dec * 100);
 
-
-        //Span<int> indices = stackalloc int[100];
-
         // integer part        
         var digits = BuildDigits(stackalloc int[36], longValue);
         var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2 + (satang > 0 ? (5 + 3 + 5 + 6) : 3)]);
@@ -205,7 +202,8 @@ public sealed class ThaiNumberTextFormatter
         {
             Format(ref buffer, digits, isNegative);
         }        
-
+        
+        // เพิ่มสตางค์ หรือบาท
         if (satang == 0)
         {
             buffer.Append(s_BahtTuan);
