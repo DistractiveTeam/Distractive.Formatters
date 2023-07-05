@@ -45,7 +45,7 @@ public sealed class ThaiNumberTextFormatter
         }
 
         private int _position = 0;
-        private readonly Span<char> _span;        
+        private readonly Span<char> _span;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string s)
@@ -201,8 +201,8 @@ public sealed class ThaiNumberTextFormatter
         if (longValue > 0)
         {
             Format(ref buffer, digits, isNegative);
-        }        
-        
+        }
+
         // เพิ่มสตางค์ หรือบาท
         if (satang == 0)
         {
@@ -214,7 +214,7 @@ public sealed class ThaiNumberTextFormatter
             {
                 buffer.Append(s_Baht);
             }
-            
+
             buffer.Append(_numbers[satang]);
             buffer.Append(s_Stang);
         }
