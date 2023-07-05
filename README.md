@@ -32,7 +32,7 @@ All public methods of ThaiNumberTextFormatter are guaranteed to be thread-safe, 
 
 ## Version History
 
-* 1.0
+* 1.0.0
     * Initial Release
 
 ## License
