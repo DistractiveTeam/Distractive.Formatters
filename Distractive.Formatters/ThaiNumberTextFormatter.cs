@@ -9,8 +9,7 @@ using System.Threading.Tasks;
 namespace Distractive.Formatters;
 
 public sealed class ThaiNumberTextFormatter
-{    
-    private const string s_Ed = "เอ็ด";    
+{
     private static readonly string[][] _numberGrid = new[] {
         new[] { "", "หนึ่งแสน", "สองแสน", "สามแสน", "สี่แสน", "ห้าแสน", "หกแสน", "เจ็ดแสน", "แปดแสน", "เก้าแสน" },
         new[] { "", "หนึ่งหมื่น", "สองหมื่น", "สามหมื่น", "สี่หมื่น", "ห้าหมื่น", "หกหมื่น", "เจ็ดหมื่น", "แปดหมื่น", "เก้าหมื่น" },
@@ -31,6 +30,7 @@ public sealed class ThaiNumberTextFormatter
         "แปดสิบ", "แปดสิบเอ็ด", "แปดสิบสอง", "แปดสิบสาม", "แปดสิบสี่", "แปดสิบห้า", "แปดสิบหก", "แปดสิบเจ็ด", "แปดสิบแปด", "แปดสิบเก้า",
         "เก้าสิบ", "เก้าสิบเอ็ด", "เก้าสิบสอง", "เก้าสิบสาม", "เก้าสิบสี่", "เก้าสิบห้า", "เก้าสิบหก", "เก้าสิบเจ็ด", "เก้าสิบแปด", "เก้าสิบเก้า",
     };
+    private const string s_Ed = "เอ็ด";
     private const string s_Stang = "สตางค์";
     private const string s_Baht = "บาท";
     private const string s_Tuan = "ถ้วน";
@@ -116,9 +116,6 @@ public sealed class ThaiNumberTextFormatter
 
         for (int i = 0, scale = 6 - digits.Length; i < loopDigitLen; i++, scale++)
         {
-            // scale
-            //if (scale < 0) scale = 6;
-
             var n = digits[i];
 
             if (n != 0)
@@ -127,7 +124,6 @@ public sealed class ThaiNumberTextFormatter
                 buffer.Append(grid[scale][n]);
             }
         }
-
 
         // หลักหน่วย
         {
@@ -141,6 +137,7 @@ public sealed class ThaiNumberTextFormatter
 
     private static void Format(ref CharBuffer buffer, ReadOnlySpan<int> digits, bool isNegative)
     {
+        // เติมเครื่องหมายลบถ้าเป็นลบ
         if (isNegative)
         {
             buffer.Append(s_Negative);
@@ -207,7 +204,7 @@ public sealed class ThaiNumberTextFormatter
         if (longValue > 0)
         {
             Format(ref buffer, digits, isNegative);
-        }
+        }        
 
         if (satang == 0)
         {
