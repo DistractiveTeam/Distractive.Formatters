@@ -12,6 +12,7 @@
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
 	<ItemGroup>
 	  <None Remove="icons8-hiragana-ma-100.png" />
@@ -29,7 +30,7 @@
 		<PackageReference Include="System.Memory" Version="4.5.4" />
 	</ItemGroup>
 	<ItemGroup>
-	  <None Include="icons8-hiragana-ma-100.png" Pack="true" PackagePath="\"/>	
-	  <None Include="README.md" Pack="true" PackagePath="\"/>
+	  <None Include="icons8-hiragana-ma-100.png" Pack="true" PackagePath="\" />	
+	  <None Include="README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 </Project>

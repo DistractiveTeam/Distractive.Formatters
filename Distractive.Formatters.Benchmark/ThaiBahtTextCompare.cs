@@ -47,7 +47,6 @@ namespace Distractive.Formatters.Benchmark
         {
             if (idx == 0) idx = decimals.Length;
             return decimalStrings[--idx];
-            ReadOnlySpan<char> mySpan = "";
         }
 
 

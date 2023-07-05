@@ -180,6 +180,9 @@ public sealed class ThaiNumberTextFormatter
         return buffer.AsString();
     }
 
+#if NET6_0_OR_GREATER
+    [SkipLocalsInit]
+#endif
     public string GetBahtText(decimal value)
     {
         bool isNegative = value < 0;
@@ -198,7 +201,11 @@ public sealed class ThaiNumberTextFormatter
 
         // integer part        
         var digits = BuildDigits(stackalloc int[36], longValue);
-        var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2 + (satang > 0 ? (5 + 3 + 5 + 6) : 3)]);
+        // maximum digits is 29 and longest word per digit is 10 (หนึ่งหมื่น)
+        // plus satang part then it should be less than 320
+        // so we skip the calculation and use 320 instead because stackalloc is O(1)        
+        var buffer = new CharBuffer(stackalloc char[320]);
+        //var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2 + (satang > 0 ? (5 + 3 + 5 + 6) : 3)]);
         if (longValue > 0)
         {
             Format(ref buffer, digits, isNegative);
