@@ -143,6 +143,7 @@ public sealed class ThaiNumberTextFormatter
             buffer.Append(s_Negative);
         }
 
+        // ถ้าเป็นเลขหลักเดียว
         if (digits.Length == 1)
         {
             var word = _numbers[digits[0]];
@@ -203,7 +204,7 @@ public sealed class ThaiNumberTextFormatter
             Format(ref buffer, digits, isNegative);
         }
 
-        // เพิ่มสตางค์ หรือบาท
+        // เพิ่มบาทถ้วน หรือบาท xx สตางค์
         if (satang == 0)
         {
             buffer.Append(s_BahtTuan);
