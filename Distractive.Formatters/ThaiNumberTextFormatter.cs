@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Distractive.Formatters;
 
+
 public sealed class ThaiNumberTextFormatter
 {
     private static readonly string[][] _numberGrid = new[] {
@@ -16,7 +17,7 @@ public sealed class ThaiNumberTextFormatter
         new[] { "", "หนึ่งพัน", "สองพัน", "สามพัน", "สี่พัน", "ห้าพัน", "หกพัน", "เจ็ดพัน", "แปดพัน", "เก้าพัน" },
         new[] { "", "หนึ่งร้อย", "สองร้อย", "สามร้อย", "สี่ร้อย", "ห้าร้อย", "หกร้อย", "เจ็ดร้อย", "แปดร้อย", "เก้าร้อย" },
         new[] { "", "สิบ", "ยี่สิบ", "สามสิบ", "สี่สิบ", "ห้าสิบ", "หกสิบ", "เจ็ดสิบ", "แปดสิบ", "เก้าสิบ" },
-        //{ "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },   
+        new[] { "ศูนย์", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },   
     };
     private static readonly string[] _numbers = new[] {
         "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
@@ -104,9 +105,42 @@ public sealed class ThaiNumberTextFormatter
             return buffer[^(bigDigits.Length + 18)..];
         }
     }
+    
+    private static void FormatInternal(scoped ref CharBuffer buffer, long value)
+    {
+        Debug.Assert(value < 1_000_000);
+        if (value == 1)
+        {
+            buffer.Append("หนึ่ง");
+            return;    
+        }
+        Span<int> digits = stackalloc int[6];
+        digits.Clear();
+        BuildDigits(digits, value);
+        //var digits = BuildDigits(stackalloc int[6], value);
+        Debug.Assert(digits.Length > 0);
+        Debug.Assert(digits.Length <= 6);
+        //var ten = value % 10;        
+
+        int loopDigitLen = digits.Length;
+        var grid = _numberGrid;
+
+        for (int i = 0, scale = 6 - digits.Length; i < loopDigitLen; i++, scale++)
+        {
+            var n = digits[i];
+            if (n != 0)
+            {
+                // digit
+                buffer.Append(grid[i][n]);
+            }
+        }
+
+        // หลักสิบและหลักหน่วย
+        //if (ten != 0) buffer.Append((ten == 1 && value > 1) ? s_Ed : _numbers[ten]);
+    }
 
 
-    private static void FormatInternal(ref CharBuffer buffer, ReadOnlySpan<int> digits)
+    private static void FormatInternal(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits)
     {
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
@@ -135,7 +169,7 @@ public sealed class ThaiNumberTextFormatter
         }
     }
 
-    private static void Format(ref CharBuffer buffer, ReadOnlySpan<int> digits, bool isNegative)
+    private static void Format(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits, bool isNegative)
     {
         // เติมเครื่องหมายลบถ้าเป็นลบ
         if (isNegative)
@@ -171,18 +205,32 @@ public sealed class ThaiNumberTextFormatter
     {
         bool isNegative = value < 0;
         if (isNegative) value = -value;
+        if (value < 100) return isNegative ? "ลบ" + _numbers[value] : _numbers[value];
 
-        if (value < 100) return isNegative ? s_Negative + _numbers[value] : _numbers[value];
+        var buffer = new CharBuffer(stackalloc char[180]);
+        long b1, b2, b3;
+        const long mil = 1_000_000;
+        b3 = value % mil;
+        b2 = (value / mil) % mil;
+        b1 = value / (mil * mil);
 
-        var digits = BuildDigits(stackalloc int[20], value);
-        var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2]);
-        Format(ref buffer, digits, isNegative);
+        if (b1 > 0)
+        {
+            FormatInternal(ref buffer, b1);
+            buffer.Append("ล้าน");
+        }
+        
+        if (b2 > 0) {
+            FormatInternal(ref buffer, b2);
+            buffer.Append("ล้าน");
+        }
+        
+        if (b3 == 1) buffer.Append(s_Ed);
+        else FormatInternal(ref buffer, b3);
+        
         return buffer.AsString();
     }
 
-#if NET6_0_OR_GREATER
-    [SkipLocalsInit]
-#endif
     public string GetBahtText(decimal value)
     {
         bool isNegative = value < 0;
