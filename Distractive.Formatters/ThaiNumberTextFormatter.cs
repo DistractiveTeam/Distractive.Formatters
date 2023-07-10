@@ -120,12 +120,11 @@ public sealed class ThaiNumberTextFormatter
         //var digits = BuildDigits(stackalloc int[6], value);
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
-        //var ten = value % 10;        
-
-        int loopDigitLen = digits.Length;
+        //var ten = value % 10;
+        
         var grid = _numberGrid;
 
-        for (int i = 0, scale = 6 - digits.Length; i < loopDigitLen; i++, scale++)
+        for (int i = 0; i < 6; i++)
         {
             var n = digits[i];
             if (n != 0)
