@@ -21,5 +21,18 @@ namespace Distractive.Formatters.Tests
                 Assert.Equal(s1, s2);
             }
         }
+
+        [Theory]
+        [InlineData(1, 2_000_000)]
+        public void CompareLong(int start, int end)
+        {
+            var formatter = new ThaiNumberTextFormatter();
+            for (long i = start; i <= end; i++)
+            {
+                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);
+                string s2 = formatter.Format(i) + "บาทถ้วน";
+                Assert.Equal(s1, s2);
+            }
+        }
     }
 }

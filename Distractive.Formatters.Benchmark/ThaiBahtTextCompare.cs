@@ -17,11 +17,13 @@ namespace Distractive.Formatters.Benchmark
     {
         private decimal[] decimals = new decimal[] { 0 };
         private string[] decimalStrings = new[] { "" };
+        private long[] longs = new long[] { 0 };
         private int idx;
         [GlobalSetup]
         public void Setup()
         {
             decimals = GetDecimals(50000).ToArray();
+            longs = decimals.Select(d => (long)d).ToArray();
             decimalStrings = decimals.Select(i => i.ToString()).ToArray();
         }
         private IEnumerable<decimal> GetDecimals(int count)
@@ -49,15 +51,26 @@ namespace Distractive.Formatters.Benchmark
             return decimalStrings[--idx];
         }
 
+        private long GetNextLong()
+        {
+            if (idx == 0) idx = longs.Length;
+            return longs[--idx];
+        }
 
-        [Benchmark(Baseline = true)]
+
+        private readonly ThaiNumberTextFormatter formatter = new();
+
+        [Benchmark]
         [ArgumentsSource(nameof(GetNextDecimal))]
-        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());
-        
-        private ThaiNumberTextFormatter formatter = new();
+        public string DistractiveLong() => formatter.Format(GetNextLong());
+
         [Benchmark]
         [ArgumentsSource(nameof(GetNextDecimal))]
         public string Distractive() => formatter.GetBahtText(GetNextDecimal());
+
+        [Benchmark(Baseline = true)]
+        [ArgumentsSource(nameof(GetNextDecimal))]
+        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());        
 
         private NumToThaiTextConverter numToThaiText = new();
         [Benchmark]
