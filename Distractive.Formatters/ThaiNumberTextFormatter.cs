@@ -120,8 +120,6 @@ public sealed class ThaiNumberTextFormatter
         //var digits = BuildDigits(stackalloc int[6], value);
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
-        //var ten = value % 10;
-        
         var grid = _numberGrid;
 
         for (int i = 0; i < 6; i++)
@@ -133,9 +131,6 @@ public sealed class ThaiNumberTextFormatter
                 buffer.Append(grid[i][n]);
             }
         }
-
-        // หลักสิบและหลักหน่วย
-        //if (ten != 0) buffer.Append((ten == 1 && value > 1) ? s_Ed : _numbers[ten]);
     }
 
 
