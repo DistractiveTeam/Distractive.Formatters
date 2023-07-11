@@ -60,21 +60,17 @@ namespace Distractive.Formatters.Benchmark
 
         private readonly ThaiNumberTextFormatter formatter = new();
 
-        [Benchmark]
-        [ArgumentsSource(nameof(GetNextDecimal))]
-        public string DistractiveLong() => formatter.Format(GetNextLong());
+        [Benchmark]        
+        public string DistractiveLong() => formatter.Format(long.MaxValue);
 
-        [Benchmark]
-        [ArgumentsSource(nameof(GetNextDecimal))]
-        public string Distractive() => formatter.GetBahtText(GetNextDecimal());
+        [Benchmark]        
+        public string Distractive() => formatter.GetBahtText(decimal.MaxValue);
 
-        [Benchmark(Baseline = true)]
-        [ArgumentsSource(nameof(GetNextDecimal))]
-        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());        
+        [Benchmark(Baseline = true)]        
+        public string ThaiBahtText() => ThaiBahtTextUtil.ThaiBahtText(GetNextDecimal());
 
         private NumToThaiTextConverter numToThaiText = new();
-        [Benchmark]
-        [ArgumentsSource(nameof(GetNextDecimal))]
+        [Benchmark]        
         public object NumberToThaiText() => numToThaiText.Convert(GetNextDecimalString(), true, true);
     }
 }
