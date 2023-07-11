@@ -24,13 +24,14 @@ namespace Distractive.Formatters.Tests
 
         [Theory]
         [InlineData(1, 2_000_000)]
-        public void CompareLong(int start, int end)
+        [InlineData(long.MaxValue, long.MaxValue)]
+        public void CompareLong(long start, long end)
         {
             var formatter = new ThaiNumberTextFormatter();
             for (long i = start; i <= end; i++)
             {
-                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);
                 string s2 = formatter.Format(i) + "บาทถ้วน";
+                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);                
                 Assert.Equal(s1, s2);
             }
         }
