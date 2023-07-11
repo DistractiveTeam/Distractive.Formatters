@@ -48,7 +48,6 @@ public sealed class ThaiNumberTextFormatter
         private int _position = 0;
         private readonly Span<char> _span;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string s)
         {
 #if NET6_0_OR_GREATER
@@ -58,11 +57,8 @@ public sealed class ThaiNumberTextFormatter
 #endif
             _position += s.Length;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public ReadOnlySpan<char> GetTrimmedSpan() => _span[.._position];
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string AsString() =>
 #if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
         new string(GetTrimmedSpan());
@@ -70,9 +66,6 @@ public sealed class ThaiNumberTextFormatter
         new string (GetTrimmedSpan().ToArray());
 #endif
     }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, long value)
     {
         Debug.Assert(value >= 0);
