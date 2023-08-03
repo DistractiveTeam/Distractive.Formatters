@@ -31,7 +31,7 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore "Distractive.Formatters.sln"
     
     - name: Build
       run: dotnet build --no-restore
