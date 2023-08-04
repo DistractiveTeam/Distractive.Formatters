@@ -10,7 +10,7 @@ on:
     branches: [ "master" ]
 
 env:
-  SOLUTION_NAME: "Distractive.Formatters.sln"
+  SOLUTION_NAME: Distractive.Formatters.sln
 
 jobs:
   build:
@@ -34,10 +34,10 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      run: dotnet restore "${{ SOLUTION_NAME }}"
+      run: dotnet restore "$SOLUTION_NAME"
     
     - name: Build
-      run: dotnet build "${{ SOLUTION_NAME }}" --no-restore
+      run: dotnet build "$SOLUTION_NAME" --no-restore
     
     - name: Test
-      run: dotnet test "${{ SOLUTION_NAME }}" --no-build --verbosity normal
+      run: dotnet test "$SOLUTION_NAME" --no-build --verbosity normal
