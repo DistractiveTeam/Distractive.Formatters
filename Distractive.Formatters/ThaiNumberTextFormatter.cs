@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace Distractive.Formatters;
 
+
 public sealed class ThaiNumberTextFormatter
 {
     private static readonly string[][] _numberGrid = new[] {
@@ -16,7 +17,7 @@ public sealed class ThaiNumberTextFormatter
         new[] { "", "หนึ่งพัน", "สองพัน", "สามพัน", "สี่พัน", "ห้าพัน", "หกพัน", "เจ็ดพัน", "แปดพัน", "เก้าพัน" },
         new[] { "", "หนึ่งร้อย", "สองร้อย", "สามร้อย", "สี่ร้อย", "ห้าร้อย", "หกร้อย", "เจ็ดร้อย", "แปดร้อย", "เก้าร้อย" },
         new[] { "", "สิบ", "ยี่สิบ", "สามสิบ", "สี่สิบ", "ห้าสิบ", "หกสิบ", "เจ็ดสิบ", "แปดสิบ", "เก้าสิบ" },
-        //{ "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },   
+        new[] { "ศูนย์", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },   
     };
     private static readonly string[] _numbers = new[] {
         "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
@@ -36,6 +37,7 @@ public sealed class ThaiNumberTextFormatter
     private const string s_Tuan = "ถ้วน";
     private const string s_BahtTuan = s_Baht + s_Tuan;
     private const string s_Negative = "ลบ";
+    private const decimal md = 1_000_000M;
 
     internal ref struct CharBuffer
     {
@@ -47,7 +49,6 @@ public sealed class ThaiNumberTextFormatter
         private int _position = 0;
         private readonly Span<char> _span;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string s)
         {
 #if NET6_0_OR_GREATER
@@ -57,11 +58,8 @@ public sealed class ThaiNumberTextFormatter
 #endif
             _position += s.Length;
         }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        
         public ReadOnlySpan<char> GetTrimmedSpan() => _span[.._position];
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string AsString() =>
 #if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
         new string(GetTrimmedSpan());
@@ -69,9 +67,6 @@ public sealed class ThaiNumberTextFormatter
         new string (GetTrimmedSpan().ToArray());
 #endif
     }
-
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, long value)
     {
         Debug.Assert(value >= 0);
@@ -79,8 +74,8 @@ public sealed class ThaiNumberTextFormatter
         int i = buffer.Length;
         do
         {
-            buffer[--i] = ((int)(value % 10));
-            value /= 10;
+            value = Math.DivRem(value, 10, out var r);
+            buffer[--i] = (int)r;
         } while (value > 0);
 
         return buffer[i..];
@@ -94,7 +89,7 @@ public sealed class ThaiNumberTextFormatter
         }
         else
         {
-            const decimal divisor = 1_000_000_000_000_000_000;
+            const long divisor = 1_000_000_000_000_000_000;
             Debug.Assert(divisor <= value);
             long big = (long)(value / divisor);
             Debug.Assert(big > 0);
@@ -104,9 +99,36 @@ public sealed class ThaiNumberTextFormatter
             return buffer[^(bigDigits.Length + 18)..];
         }
     }
+    
+    private static void FormatInternal(scoped ref CharBuffer buffer, long value)
+    {
+        Debug.Assert(value < 1_000_000);
+        if (value == 1)
+        {
+            buffer.Append("หนึ่ง");
+            return;    
+        }
+        Span<int> digits = stackalloc int[6];
+        digits.Clear();
+        BuildDigits(digits, value);
+        //var digits = BuildDigits(stackalloc int[6], value);
+        Debug.Assert(digits.Length > 0);
+        Debug.Assert(digits.Length <= 6);
+        var grid = _numberGrid;
+
+        for (int i = 0; i < 6; i++)
+        {
+            var n = digits[i];
+            if (n != 0)
+            {
+                // digit
+                buffer.Append(grid[i][n]);
+            }
+        }
+    }
 
 
-    private static void FormatInternal(ref CharBuffer buffer, ReadOnlySpan<int> digits)
+    private static void FormatInternal(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits)
     {
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
@@ -135,7 +157,7 @@ public sealed class ThaiNumberTextFormatter
         }
     }
 
-    private static void Format(ref CharBuffer buffer, ReadOnlySpan<int> digits, bool isNegative)
+    private static void Format(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits, bool isNegative)
     {
         // เติมเครื่องหมายลบถ้าเป็นลบ
         if (isNegative)
@@ -171,18 +193,39 @@ public sealed class ThaiNumberTextFormatter
     {
         bool isNegative = value < 0;
         if (isNegative) value = -value;
+        if (value < 100) return isNegative ? "ลบ" + _numbers[value] : _numbers[value];
 
-        if (value < 100) return isNegative ? s_Negative + _numbers[value] : _numbers[value];
+        var buffer = new CharBuffer(stackalloc char[180]);
+        if (isNegative) buffer.Append("ลบ");
 
-        var digits = BuildDigits(stackalloc int[20], value);
-        var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2]);
-        Format(ref buffer, digits, isNegative);
+        const long mil = 1_000_000;
+        long b3 = value % mil;
+        long b2 = (value / mil) % mil;
+        long b1 = value / (mil * mil);
+
+        if (b1 > 0)
+        {
+            var q = Math.DivRem(b1, mil, out var r);
+            if (q > 0)
+            {
+                buffer.Append(_numbers[q]);
+                buffer.Append("ล้าน");
+            }
+            FormatInternal(ref buffer, r);
+            buffer.Append("ล้าน");
+        }
+        
+        if (b2 > 0) {
+            FormatInternal(ref buffer, b2);
+            buffer.Append("ล้าน");
+        }
+        
+        if (b3 == 1) buffer.Append(s_Ed);
+        else FormatInternal(ref buffer, b3);
+        
         return buffer.AsString();
     }
 
-#if NET6_0_OR_GREATER
-    [SkipLocalsInit]
-#endif
     public string GetBahtText(decimal value)
     {
         bool isNegative = value < 0;
