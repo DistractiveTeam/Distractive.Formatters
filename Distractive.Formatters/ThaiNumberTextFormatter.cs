@@ -37,6 +37,7 @@ public sealed class ThaiNumberTextFormatter
     private const string s_Tuan = "ถ้วน";
     private const string s_BahtTuan = s_Baht + s_Tuan;
     private const string s_Negative = "ลบ";
+    private const decimal md = 1_000_000M;
 
     internal ref struct CharBuffer
     {
@@ -73,8 +74,8 @@ public sealed class ThaiNumberTextFormatter
         int i = buffer.Length;
         do
         {
-            buffer[--i] = ((int)(value % 10));
-            value /= 10;
+            value = Math.DivRem(value, 10, out var r);
+            buffer[--i] = (int)r;
         } while (value > 0);
 
         return buffer[i..];
@@ -88,7 +89,7 @@ public sealed class ThaiNumberTextFormatter
         }
         else
         {
-            const decimal divisor = 1_000_000_000_000_000_000;
+            const long divisor = 1_000_000_000_000_000_000;
             Debug.Assert(divisor <= value);
             long big = (long)(value / divisor);
             Debug.Assert(big > 0);
@@ -195,15 +196,22 @@ public sealed class ThaiNumberTextFormatter
         if (value < 100) return isNegative ? "ลบ" + _numbers[value] : _numbers[value];
 
         var buffer = new CharBuffer(stackalloc char[180]);
-        long b1, b2, b3;
+        if (isNegative) buffer.Append("ลบ");
+
         const long mil = 1_000_000;
-        b3 = value % mil;
-        b2 = (value / mil) % mil;
-        b1 = value / (mil * mil);
+        long b3 = value % mil;
+        long b2 = (value / mil) % mil;
+        long b1 = value / (mil * mil);
 
         if (b1 > 0)
         {
-            FormatInternal(ref buffer, b1);
+            var q = Math.DivRem(b1, mil, out var r);
+            if (q > 0)
+            {
+                buffer.Append(_numbers[q]);
+                buffer.Append("ล้าน");
+            }
+            FormatInternal(ref buffer, r);
             buffer.Append("ล้าน");
         }
         

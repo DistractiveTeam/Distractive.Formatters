@@ -63,7 +63,7 @@ namespace Distractive.Formatters.Benchmark
         [Benchmark]        
         public string DistractiveLong() => formatter.Format(long.MaxValue);
 
-        [Benchmark]        
+        [Benchmark]
         public string Distractive() => formatter.GetBahtText(decimal.MaxValue);
 
         [Benchmark(Baseline = true)]        

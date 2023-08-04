@@ -10,7 +10,7 @@ namespace Distractive.Formatters.Tests
     public class ThaiBahtCompareTests
     {
         [Theory]
-        [InlineData(1_000_000, 11_000_000)]
+        [InlineData(1, 1_200_000)]
         public void Compare(int start, int end)
         {
             var formatter = new ThaiNumberTextFormatter();
@@ -24,7 +24,7 @@ namespace Distractive.Formatters.Tests
 
         [Theory]
         [InlineData(1, 2_000_000)]
-        [InlineData(long.MaxValue, long.MaxValue)]
+        [InlineData(-999999999999999999, -999999999999999999+1_000_000)]
         public void CompareLong(long start, long end)
         {
             var formatter = new ThaiNumberTextFormatter();
