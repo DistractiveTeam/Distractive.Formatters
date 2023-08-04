@@ -9,6 +9,9 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  SOLUTION_NAME: "Distractive.Formatters.sln"
+
 jobs:
   build:
 
@@ -31,10 +34,10 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      run: dotnet restore "Distractive.Formatters.sln"
+      run: dotnet restore "${{ SOLUTION_NAME }}"
     
     - name: Build
-      run: dotnet build "Distractive.Formatters.sln" --no-restore
+      run: dotnet build "${{ SOLUTION_NAME }}" --no-restore
     
     - name: Test
-      run: dotnet test "Distractive.Formatters.sln" --no-build --verbosity normal
+      run: dotnet test "${{ SOLUTION_NAME }}" --no-build --verbosity normal
