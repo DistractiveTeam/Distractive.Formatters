@@ -2,6 +2,8 @@
 using System.Diagnostics.Contracts;
 using System.Text;
 
+#nullable disable
+
 namespace GreatFriends.ThaiBahtText
 {
 
