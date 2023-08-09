@@ -83,6 +83,8 @@ public sealed class ThaiNumberTextFormatter
 
     private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, decimal value)
     {
+        Debug.Assert(value >= 0);
+
         if (long.MinValue < value && value < long.MaxValue)
         {
             return BuildDigits(buffer, (long)value);
@@ -95,7 +97,7 @@ public sealed class ThaiNumberTextFormatter
             Debug.Assert(big > 0);
             long small = (long)(value % divisor);
             var smallDigits = BuildDigits(buffer, small);
-            var bigDigits = BuildDigits(buffer[..^18], big);
+            var bigDigits = BuildDigits(buffer[..18], big);
             return buffer[^(bigDigits.Length + 18)..];
         }
     }
@@ -230,6 +232,8 @@ public sealed class ThaiNumberTextFormatter
     {
         bool isNegative = value < 0;
         if (isNegative) value = -value;
+
+        Debug.Assert(value >= 0);
 
         decimal longValue = decimal.Truncate(value);
 
