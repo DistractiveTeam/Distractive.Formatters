@@ -28,12 +28,17 @@ namespace Distractive.Formatters.Tests
         public void CompareLong(long start, long end)
         {
             var formatter = new ThaiNumberTextFormatter();
-            for (long i = start; i <= end; i++)
-            {
-                string s2 = formatter.Format(i) + "บาทถ้วน";
-                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);                
-                Assert.Equal(s1, s2);
+            IEnumerable<long> range() {
+                for (long i = start; i <= end; i++)
+                {
+                    yield return i;
+                }
             }
+            Parallel.ForEach(range(), i => {
+                string s2 = formatter.Format(i) + "บาทถ้วน";
+                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);
+                Assert.Equal(s1, s2);
+            });
         }
     }
 }
