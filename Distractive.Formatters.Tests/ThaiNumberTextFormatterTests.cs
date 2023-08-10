@@ -53,6 +53,7 @@ namespace Distractive.Formatters.Tests
 
         [Theory]
         [InlineData(-1, "ลบหนึ่งบาทถ้วน")]
+        [InlineData(-1_000, "ลบหนึ่งพันบาทถ้วน")]
         [InlineData(0, "ศูนย์บาทถ้วน")]
         [InlineData(10, "สิบบาทถ้วน")]
         [InlineData(11, "สิบเอ็ดบาทถ้วน")]
@@ -64,11 +65,17 @@ namespace Distractive.Formatters.Tests
         [InlineData(300, "สามร้อยบาทถ้วน")]
         [InlineData(10_000_000, "สิบล้านบาทถ้วน")]
         [InlineData(10_000_002_000_000_000_000, "สิบล้านสองล้านล้านบาทถ้วน")]
-        [InlineData(10_000_000_000_000_000_000, "สิบล้านล้านล้านบาทถ้วน")]
-        public void FormatBahtTuan(decimal num, string formattedText)
+        [InlineData("-10_000_000_000_000_000_000", "ลบสิบล้านล้านล้านบาทถ้วน")]
+        [InlineData("-10_000_000_000_000_000_000_000_000", "ลบสิบล้านล้านล้านล้านบาทถ้วน")]
+        public void FormatBahtTuan(object num, string formattedText)
         {
+            if (num is string s)
+            {
+                num = s.Replace("_", "");
+            }
+            var val = Convert.ToDecimal(num);
             var formatter = new ThaiNumberTextFormatter();
-            var text = formatter.GetBahtText(num);
+            var text = formatter.GetBahtText(val);
             Assert.Equal(formattedText, text);
         }
 
