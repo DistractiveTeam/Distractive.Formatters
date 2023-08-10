@@ -49,6 +49,7 @@ public sealed class ThaiNumberTextFormatter
         private int _position = 0;
         private readonly Span<char> _span;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Append(string s)
         {
 #if NET6_0_OR_GREATER
@@ -97,6 +98,7 @@ public sealed class ThaiNumberTextFormatter
             Debug.Assert(big > 0);
             long small = (long)(value % divisor);
             var smallDigits = BuildDigits(buffer, small);
+            Debug.Assert(smallDigits.Length == 18);
             var bigDigits = BuildDigits(buffer[..18], big);
             return buffer[^(bigDigits.Length + 18)..];
         }
