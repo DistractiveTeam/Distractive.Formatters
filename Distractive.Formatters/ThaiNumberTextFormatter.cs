@@ -97,8 +97,7 @@ public sealed class ThaiNumberTextFormatter
             long big = (long)(value / divisor);
             Debug.Assert(big > 0);
             long small = (long)(value % divisor);
-            var smallDigits = BuildDigits(buffer, small);
-            Debug.Assert(smallDigits.Length == 18);
+            BuildDigits(buffer, small);
             var bigDigits = BuildDigits(buffer[..18], big);
             return buffer[^(bigDigits.Length + 18)..];
         }

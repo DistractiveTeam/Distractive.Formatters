@@ -60,7 +60,7 @@ namespace Distractive.Formatters.Benchmark
 
         private readonly ThaiNumberTextFormatter formatter = new();
 
-        //[Benchmark]        
+        [Benchmark]        
         public string DistractiveLong() => formatter.Format(long.MaxValue);
 
         [Benchmark]
