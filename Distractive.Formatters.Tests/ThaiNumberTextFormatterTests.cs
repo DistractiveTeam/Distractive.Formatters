@@ -66,6 +66,7 @@ namespace Distractive.Formatters.Tests
         [InlineData(10_000_000, "สิบล้านบาทถ้วน")]
         [InlineData(10_000_002_000_000_000_000, "สิบล้านสองล้านล้านบาทถ้วน")]
         [InlineData("-10_000_000_000_000_000_000", "ลบสิบล้านล้านล้านบาทถ้วน")]
+        [InlineData("-100_000_000_000_000_000", "ลบหนึ่งแสนล้านล้านบาทถ้วน")]
         [InlineData("-10_000_000_000_000_000_000_000_000", "ลบสิบล้านล้านล้านล้านบาทถ้วน")]
         public void FormatBahtTuan(object num, string formattedText)
         {
