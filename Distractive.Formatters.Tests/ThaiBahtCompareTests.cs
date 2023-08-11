@@ -39,6 +39,12 @@ namespace Distractive.Formatters.Tests
                 string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i);
                 Assert.Equal(s1, s2);
             });
+            
+            Parallel.ForEach(range(), i => {
+                string s2 = i.ToThaiWords(true) + "บาทถ้วน";
+                string s1 = GreatFriends.ThaiBahtText.ThaiBahtTextUtil.ThaiBahtText(i, GreatFriends.ThaiBahtText.UsesEt.TensOnly);
+                Assert.Equal(s1, s2);
+            });
         }
     }
 }

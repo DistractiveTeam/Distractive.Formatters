@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -42,6 +43,18 @@ public sealed class ThaiNumberTextFormatter
     private const string s_Negative = "ลบ";
     private const decimal md = 1_000_000M;
 
+    private readonly string _et;
+    public ThaiNumberTextFormatter(ThaiNumberTextFormatterOptions options)
+    {
+        Options = options;
+        _et = options.FormatFlags.HasFlag(ThaiNumberTextFormatFlags.EtWithTensOnly)
+            ? "หนึ่ง" : s_Ed;
+    }
+
+    public ThaiNumberTextFormatter() : this(ThaiNumberTextFormatterOptions.Default) { }
+
+    public ThaiNumberTextFormatterOptions Options { get; }
+
     internal ref struct CharBuffer
     {
         public CharBuffer(Span<char> span)
@@ -66,9 +79,9 @@ public sealed class ThaiNumberTextFormatter
         public ReadOnlySpan<char> GetTrimmedSpan() => _span[.._position];
         public string AsString() =>
 #if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
-        new string(GetTrimmedSpan());
+        new(GetTrimmedSpan());
 #else
-        new string (GetTrimmedSpan().ToArray());
+        new(GetTrimmedSpan().ToArray());
 #endif
     }
 
@@ -87,12 +100,12 @@ public sealed class ThaiNumberTextFormatter
         return buffer[i..];
     }
 
-    private static void FormatInternal(scoped ref CharBuffer buffer, long value)
+    private void FormatInternal(scoped ref CharBuffer buffer, long value)
     {
         if (value == 0) return;
-        if (value == 1)
+        if (value < 100)
         {
-            buffer.Append("หนึ่ง");
+            buffer.Append(_numbers[value]);
             return;
         }
 
@@ -106,14 +119,17 @@ public sealed class ThaiNumberTextFormatter
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
         var grid = _numberGrid;
-        for (int i = 0; i < 6; i++)
+        for (int i = 0; i < 4; i++)
         {
             var n = digits[i];
             buffer.Append(grid[i][n]);
         }
+        var p = value % 100;
+        var s = p == 1 ? _et : _numbers[p];
+        buffer.Append(s);
     }
 
-    private static void Format(scoped ref CharBuffer buffer, long value, bool fillMil = false)
+    private void Format(scoped ref CharBuffer buffer, long value, bool fillMil = false)
     {
         bool isNegative = value < 0;
         if (isNegative) value = -value;
@@ -154,7 +170,7 @@ public sealed class ThaiNumberTextFormatter
         if (b3 > 0)
         {
             var val = b3 % mil;
-            if (val == 1) buffer.Append(s_Ed);
+            if (val == 1) buffer.Append(_et);
             else FormatInternal(ref buffer, val);
         }
     }
@@ -223,5 +239,29 @@ public sealed class ThaiNumberTextFormatter
         }
         return buffer.AsString();
     }
+}
+
+public sealed record ThaiNumberTextFormatterOptions(ThaiNumberTextFormatFlags FormatFlags = ThaiNumberTextFormatFlags.Default)
+{
+    public static ThaiNumberTextFormatterOptions Default { get; } = new();
+    public static ThaiNumberTextFormatterOptions EtWithTensOnly { get; } = new(ThaiNumberTextFormatFlags.EtWithTensOnly);
+}
+
+[Flags]
+public enum ThaiNumberTextFormatFlags
+{
+    /// <summary>
+    /// ค่าตั้งต้น จะใช้เอ็ดเสมอ (ร้อยเอ็ด พันเอ็ด ล้านเอ็ด ร้อยเอ็ดล้าน ฯลฯ)
+    /// ซึ่งเป็นรูปแบบที่ราชบัณฑิตยสภาแนะนำ
+    /// </summary>
+    Default = 0,
+
+    /// <summary>
+    /// ใช้เอ็ดกับหลักสิบเท่านั้น (ยี่สิบเอ็ด-เก้าสิบเอ็ด) ที่เหลือจะเป็นหนึ่ง เช่น หนึ่งร้อยหนึ่ง
+    /// </summary>
+    EtWithTensOnly = 1,
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    TotalPerm = EtWithTensOnly * 2,
 }
 

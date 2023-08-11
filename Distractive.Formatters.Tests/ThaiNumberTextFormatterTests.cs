@@ -19,14 +19,24 @@ namespace Distractive.Formatters.Tests
         [InlineData(42, "สี่สิบสอง")]
         [InlineData(100, "หนึ่งร้อย")]
         [InlineData(101, "หนึ่งร้อยเอ็ด")]
+        [InlineData(101, "หนึ่งร้อยหนึ่ง", true)]
+        [InlineData(121, "หนึ่งร้อยยี่สิบเอ็ด")]
+        [InlineData(121, "หนึ่งร้อยยี่สิบเอ็ด", true)]
+        [InlineData(1001, "หนึ่งพันหนึ่ง", true)]
+        [InlineData(11_000_001, "สิบเอ็ดล้านเอ็ด")]
+        [InlineData(11_000_001, "สิบเอ็ดล้านหนึ่ง", true)]
+        [InlineData(101_000_001, "หนึ่งร้อยเอ็ดล้านเอ็ด")]
+        [InlineData(101_000_001, "หนึ่งร้อยหนึ่งล้านหนึ่ง", true)]
         [InlineData(300, "สามร้อย")]
         [InlineData(10_000_000, "สิบล้าน")]
         [InlineData(9_223372_036854_775807, "เก้าล้านสองแสนสองหมื่นสามพันสามร้อยเจ็ดสิบสองล้านสามหมื่นหกพันแปดร้อยห้าสิบสี่ล้านเจ็ดแสนเจ็ดหมื่นห้าพันแปดร้อยเจ็ด")]
         [InlineData(-300, "ลบสามร้อย")]
         [InlineData(-1, "ลบหนึ่ง")]
-        public void FormatTest(long num, string formattedText)
+        public void FormatTest(long num, string formattedText, bool useEtWithTensOnly = false)
         {
-            var formatter = new ThaiNumberTextFormatter();
+            var o = useEtWithTensOnly ? ThaiNumberTextFormatterOptions.EtWithTensOnly
+                : ThaiNumberTextFormatterOptions.Default;
+            var formatter = new ThaiNumberTextFormatter(o);
             var text = formatter.Format(num);
             Assert.Equal(formattedText, text);
         }
