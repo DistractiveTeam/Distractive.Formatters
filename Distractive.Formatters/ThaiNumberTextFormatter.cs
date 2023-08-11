@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 namespace Distractive.Formatters;
 
 
+#if NET6_0_OR_GREATER
+[SkipLocalsInit]
+#endif
 public sealed class ThaiNumberTextFormatter
 {
     private static readonly string[][] _numberGrid = new[] {
@@ -17,10 +20,10 @@ public sealed class ThaiNumberTextFormatter
         new[] { "", "หนึ่งพัน", "สองพัน", "สามพัน", "สี่พัน", "ห้าพัน", "หกพัน", "เจ็ดพัน", "แปดพัน", "เก้าพัน" },
         new[] { "", "หนึ่งร้อย", "สองร้อย", "สามร้อย", "สี่ร้อย", "ห้าร้อย", "หกร้อย", "เจ็ดร้อย", "แปดร้อย", "เก้าร้อย" },
         new[] { "", "สิบ", "ยี่สิบ", "สามสิบ", "สี่สิบ", "ห้าสิบ", "หกสิบ", "เจ็ดสิบ", "แปดสิบ", "เก้าสิบ" },
-        new[] { "ศูนย์", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },   
+        new[] { "", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },
     };
     private static readonly string[] _numbers = new[] {
-        "ศูนย์", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
+        "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
         "สิบ", "สิบเอ็ด", "สิบสอง", "สิบสาม", "สิบสี่", "สิบห้า", "สิบหก", "สิบเจ็ด", "สิบแปด", "สิบเก้า",
         "ยี่สิบ", "ยี่สิบเอ็ด", "ยี่สิบสอง", "ยี่สิบสาม", "ยี่สิบสี่", "ยี่สิบห้า", "ยี่สิบหก", "ยี่สิบเจ็ด", "ยี่สิบแปด", "ยี่สิบเก้า",
         "สามสิบ", "สามสิบเอ็ด", "สามสิบสอง", "สามสิบสาม", "สามสิบสี่", "สามสิบห้า", "สามสิบหก", "สามสิบเจ็ด", "สามสิบแปด", "สามสิบเก้า",
@@ -59,7 +62,7 @@ public sealed class ThaiNumberTextFormatter
 #endif
             _position += s.Length;
         }
-        
+
         public ReadOnlySpan<char> GetTrimmedSpan() => _span[.._position];
         public string AsString() =>
 #if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
@@ -68,7 +71,9 @@ public sealed class ThaiNumberTextFormatter
         new string (GetTrimmedSpan().ToArray());
 #endif
     }
-    private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, long value)
+
+
+    private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, int value)
     {
         Debug.Assert(value >= 0);
 
@@ -76,188 +81,130 @@ public sealed class ThaiNumberTextFormatter
         do
         {
             value = Math.DivRem(value, 10, out var r);
-            buffer[--i] = (int)r;
+            buffer[--i] = r;
         } while (value > 0);
 
         return buffer[i..];
     }
 
-    private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, decimal value)
-    {
-        Debug.Assert(value >= 0);
-
-        if (long.MinValue < value && value < long.MaxValue)
-        {
-            return BuildDigits(buffer, (long)value);
-        }
-        else
-        {
-            const long divisor = 1_000_000_000_000_000_000;
-            Debug.Assert(divisor <= value);
-            long big = (long)(value / divisor);
-            Debug.Assert(big > 0);
-            long small = (long)(value % divisor);
-            BuildDigits(buffer, small);
-            var bigDigits = BuildDigits(buffer[..18], big);
-            return buffer[^(bigDigits.Length + 18)..];
-        }
-    }
-    
     private static void FormatInternal(scoped ref CharBuffer buffer, long value)
     {
-        Debug.Assert(value < 1_000_000);
+        if (value == 0) return;
         if (value == 1)
         {
             buffer.Append("หนึ่ง");
-            return;    
+            return;
         }
+
+        Debug.Assert(value > 0);
+        Debug.Assert(value < 1_000_000);
+
         Span<int> digits = stackalloc int[6];
         digits.Clear();
-        BuildDigits(digits, value);
+        BuildDigits(digits, (int)value);
         //var digits = BuildDigits(stackalloc int[6], value);
         Debug.Assert(digits.Length > 0);
         Debug.Assert(digits.Length <= 6);
         var grid = _numberGrid;
-
         for (int i = 0; i < 6; i++)
         {
             var n = digits[i];
-            if (n != 0)
-            {
-                // digit
-                buffer.Append(grid[i][n]);
-            }
+            buffer.Append(grid[i][n]);
         }
     }
 
-
-    private static void FormatInternal(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits)
+    private static void Format(scoped ref CharBuffer buffer, long value, bool fillMil = false)
     {
-        Debug.Assert(digits.Length > 0);
-        Debug.Assert(digits.Length <= 6);
+        bool isNegative = value < 0;
+        if (isNegative) value = -value;
+        if (isNegative) buffer.Append(s_Negative);
 
-        int loopDigitLen = digits.Length - 1;
-        var grid = _numberGrid;
-
-        for (int i = 0, scale = 6 - digits.Length; i < loopDigitLen; i++, scale++)
+        if (value < 100 && !fillMil)
         {
-            var n = digits[i];
-
-            if (n != 0)
-            {
-                // digit
-                buffer.Append(grid[scale][n]);
-            }
+            string s = value == 0 ? "ศูนย์" : _numbers[(int)value];
+            buffer.Append(s);
+            return;
         }
 
-        // หลักหน่วย
-        {
-            var n = digits[^1];
-            if (n != 0)
-            {
-                buffer.Append(n == 1 && digits.Length > 1 ? s_Ed : _numbers[n]);
-            }
-        }
-    }
+        const long mil = 1_000_000;
+        long b3 = value;
+        long b2 = value / mil;
+        long b1 = value / mil / mil;
+        long b0 = value / mil / mil / mil;
+        Debug.Assert(b0 < 100);
 
-    private static void Format(scoped ref CharBuffer buffer, scoped ReadOnlySpan<int> digits, bool isNegative)
-    {
-        // เติมเครื่องหมายลบถ้าเป็นลบ
-        if (isNegative)
+        if (b0 > 0)
         {
-            buffer.Append(s_Negative);
+            buffer.Append(_numbers[b0]);
+            buffer.Append("ล้าน");
         }
 
-        // ถ้าเป็นเลขหลักเดียว
-        if (digits.Length == 1)
+        if (b1 > 0 || fillMil)
         {
-            var word = _numbers[digits[0]];
-            buffer.Append(word);
+            FormatInternal(ref buffer, b1 % mil);
+            buffer.Append("ล้าน");
         }
-        else
+
+        if (b2 > 0 || fillMil)
         {
-            var remains = digits.Length % 6;
-            if (remains == 0) remains = 6;
-            var start = 0;
-            while (start < digits.Length)
-            {
-                FormatInternal(ref buffer, digits.Slice(start, remains));
-                start += remains;
-                remains = 6;
-                if (start < digits.Length)
-                {
-                    buffer.Append("ล้าน");
-                }
-            }
+            FormatInternal(ref buffer, b2 % mil);
+            buffer.Append("ล้าน");
+        }
+
+        if (b3 > 0)
+        {
+            var val = b3 % mil;
+            if (val == 1) buffer.Append(s_Ed);
+            else FormatInternal(ref buffer, val);
         }
     }
 
     public string Format(long value)
     {
-        bool isNegative = value < 0;
-        if (isNegative) value = -value;
-        if (value < 100) return isNegative ? "ลบ" + _numbers[value] : _numbers[value];
-
         var buffer = new CharBuffer(stackalloc char[180]);
-        if (isNegative) buffer.Append("ลบ");
-
-        const long mil = 1_000_000;
-        long b3 = value % mil;
-        long b2 = (value / mil) % mil;
-        long b1 = value / (mil * mil);
-
-        if (b1 > 0)
-        {
-            var q = Math.DivRem(b1, mil, out var r);
-            if (q > 0)
-            {
-                buffer.Append(_numbers[q]);
-                buffer.Append("ล้าน");
-            }
-            FormatInternal(ref buffer, r);
-            buffer.Append("ล้าน");
-        }
-        
-        if (b2 > 0) {
-            FormatInternal(ref buffer, b2);
-            buffer.Append("ล้าน");
-        }
-        
-        if (b3 == 1) buffer.Append(s_Ed);
-        else FormatInternal(ref buffer, b3);
-        
+        Format(ref buffer, value);
         return buffer.AsString();
     }
 
     public string GetBahtText(decimal value)
     {
-        bool isNegative = value < 0;
-        if (isNegative) value = -value;
+        if (value == 0) return "ศูนย์บาทถ้วน";
+        Debug.Assert(value != 0);
 
-        Debug.Assert(value >= 0);
-
-        decimal longValue = decimal.Truncate(value);
-
-        // ถ้าไม่มีทศนิยม และน้อยกว่า 100
-        if (longValue == value && value < 100)
-        {
-            return (isNegative ? s_Negative : "") + _numbers[(int)value] + s_BahtTuan;
-        }
-
-        decimal dec = value - longValue;
-        int satang = (int)(dec * 100);
-
-        // integer part        
-        var digits = BuildDigits(stackalloc int[36], longValue);
         // maximum digits is 29 and longest word per digit is 10 (หนึ่งหมื่น)
         // plus satang part then it should be less than 320
         // so we skip the calculation and use 320 instead because stackalloc is O(1)        
         var buffer = new CharBuffer(stackalloc char[320]);
-        //var buffer = new CharBuffer(stackalloc char[digits.Length * 10 + 2 + (satang > 0 ? (5 + 3 + 5 + 6) : 3)]);
-        if (longValue > 0)
+
+        if (value < 0)
         {
-            Format(ref buffer, digits, isNegative);
+            value = -value;
+            buffer.Append(s_Negative);
         }
+
+        decimal longValue = decimal.Truncate(value);        
+
+        if (longValue != 0)
+        {            
+            if (longValue < long.MaxValue)
+            {
+                Format(ref buffer, (long)longValue);
+            }
+            else
+            {
+                const long divisor = 1_000_000_000_000_000_000;
+                Debug.Assert(divisor <= value);
+                long big = (long)(value / divisor);
+                Debug.Assert(big != 0);
+                long small = (long)(value % divisor);                
+                Format(ref buffer, big);
+                buffer.Append("ล้าน");
+                Format(ref buffer, small, true);
+            }
+        }
+
+        decimal dec = value - longValue;
+        int satang = (int)(dec * 100);
 
         // เพิ่มบาทถ้วน หรือบาท xx สตางค์
         if (satang == 0)

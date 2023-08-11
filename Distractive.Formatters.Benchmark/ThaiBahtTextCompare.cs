@@ -51,6 +51,7 @@ namespace Distractive.Formatters.Benchmark
             return decimalStrings[--idx];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private long GetNextLong()
         {
             if (idx == 0) idx = longs.Length;
@@ -61,7 +62,7 @@ namespace Distractive.Formatters.Benchmark
         private readonly ThaiNumberTextFormatter formatter = new();
 
         [Benchmark]        
-        public string DistractiveLong() => formatter.Format(long.MaxValue);
+        public string DistractiveLong() => formatter.Format(GetNextLong());
 
         [Benchmark]
         public string Distractive() => formatter.GetBahtText(GetNextDecimal());
