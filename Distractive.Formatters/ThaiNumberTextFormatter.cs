@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Distractive.Formatters;
@@ -19,9 +19,11 @@ public sealed class ThaiNumberTextFormatter
         new[] { "", "หนึ่งหมื่น", "สองหมื่น", "สามหมื่น", "สี่หมื่น", "ห้าหมื่น", "หกหมื่น", "เจ็ดหมื่น", "แปดหมื่น", "เก้าหมื่น" },
         new[] { "", "หนึ่งพัน", "สองพัน", "สามพัน", "สี่พัน", "ห้าพัน", "หกพัน", "เจ็ดพัน", "แปดพัน", "เก้าพัน" },
         new[] { "", "หนึ่งร้อย", "สองร้อย", "สามร้อย", "สี่ร้อย", "ห้าร้อย", "หกร้อย", "เจ็ดร้อย", "แปดร้อย", "เก้าร้อย" },
-        new[] { "", "สิบ", "ยี่สิบ", "สามสิบ", "สี่สิบ", "ห้าสิบ", "หกสิบ", "เจ็ดสิบ", "แปดสิบ", "เก้าสิบ" },
-        new[] { "", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },
     };
+    private static readonly string[] _w100k = _numberGrid[0];
+    private static readonly string[] _w10k = _numberGrid[1];
+    private static readonly string[] _w1k = _numberGrid[2];
+    private static readonly string[] _w100 = _numberGrid[3];
     private static readonly string[] _numbers = new[] {
         "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
         "สิบ", "สิบเอ็ด", "สิบสอง", "สิบสาม", "สิบสี่", "สิบห้า", "สิบหก", "สิบเจ็ด", "สิบแปด", "สิบเก้า",
@@ -41,6 +43,18 @@ public sealed class ThaiNumberTextFormatter
     private const string s_BahtTuan = s_Baht + s_Tuan;
     private const string s_Negative = "ลบ";
     private const decimal md = 1_000_000M;
+
+    private readonly string _et;
+    public ThaiNumberTextFormatter(ThaiNumberTextFormatterOptions options)
+    {
+        Options = options;
+        _et = options.FormatFlags.HasFlag(ThaiNumberTextFormatFlags.EtWithTensOnly)
+            ? "หนึ่ง" : s_Ed;
+    }
+
+    public ThaiNumberTextFormatter() : this(ThaiNumberTextFormatterOptions.Default) { }
+
+    public ThaiNumberTextFormatterOptions Options { get; }
 
     internal ref struct CharBuffer
     {
@@ -66,54 +80,43 @@ public sealed class ThaiNumberTextFormatter
         public ReadOnlySpan<char> GetTrimmedSpan() => _span[.._position];
         public string AsString() =>
 #if NETSTANDARD2_1_OR_GREATER || NET6_0_OR_GREATER
-        new string(GetTrimmedSpan());
+        new(GetTrimmedSpan());
 #else
-        new string (GetTrimmedSpan().ToArray());
+        new(GetTrimmedSpan().ToArray());
 #endif
     }
 
 
-    private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, int value)
-    {
-        Debug.Assert(value >= 0);
 
-        int i = buffer.Length;
-        do
-        {
-            value = Math.DivRem(value, 10, out var r);
-            buffer[--i] = r;
-        } while (value > 0);
 
-        return buffer[i..];
-    }
-
-    private static void FormatInternal(scoped ref CharBuffer buffer, long value)
+    private void FormatInternal(scoped ref CharBuffer buffer, int value)
     {
         if (value == 0) return;
-        if (value == 1)
+        Debug.Assert(value > 0);
+        Debug.Assert(value < 1_000_000);
+        
+        if (value < 100)
         {
-            buffer.Append("หนึ่ง");
+            buffer.Append(_numbers[value]);
             return;
         }
 
-        Debug.Assert(value > 0);
-        Debug.Assert(value < 1_000_000);
+        Debug.Assert(value >= 100);
 
-        Span<int> digits = stackalloc int[6];
-        digits.Clear();
-        BuildDigits(digits, (int)value);
-        //var digits = BuildDigits(stackalloc int[6], value);
-        Debug.Assert(digits.Length > 0);
-        Debug.Assert(digits.Length <= 6);
-        var grid = _numberGrid;
-        for (int i = 0; i < 6; i++)
-        {
-            var n = digits[i];
-            buffer.Append(grid[i][n]);
-        }
+        var a = _w100k[value / 100_000 % 10];
+        var b = _w10k[value / 10_000 % 10];
+        var c = _w1k[value / 1_000 % 10];
+        var d = _w100[value / 100 % 10];
+        var p = value % 100;
+        var s = p == 1 ? _et : _numbers[p];
+        buffer.Append(a);
+        buffer.Append(b);
+        buffer.Append(c);
+        buffer.Append(d);        
+        buffer.Append(s);
     }
 
-    private static void Format(scoped ref CharBuffer buffer, long value, bool fillMil = false)
+    private void Format(scoped ref CharBuffer buffer, long value, bool fillMil = false)
     {
         bool isNegative = value < 0;
         if (isNegative) value = -value;
@@ -129,8 +132,8 @@ public sealed class ThaiNumberTextFormatter
         const long mil = 1_000_000;
         long b3 = value;
         long b2 = value / mil;
-        long b1 = value / mil / mil;
-        long b0 = value / mil / mil / mil;
+        long b1 = value / (mil * mil);
+        long b0 = value / (mil * mil * mil);
         Debug.Assert(b0 < 100);
 
         if (b0 > 0)
@@ -141,20 +144,20 @@ public sealed class ThaiNumberTextFormatter
 
         if (b1 > 0 || fillMil)
         {
-            FormatInternal(ref buffer, b1 % mil);
+            FormatInternal(ref buffer, (int)(b1 % mil));
             buffer.Append("ล้าน");
         }
 
         if (b2 > 0 || fillMil)
         {
-            FormatInternal(ref buffer, b2 % mil);
+            FormatInternal(ref buffer, (int)(b2 % mil));
             buffer.Append("ล้าน");
         }
 
         if (b3 > 0)
         {
-            var val = b3 % mil;
-            if (val == 1) buffer.Append(s_Ed);
+            var val = (int)(b3 % mil);
+            if (val == 1) buffer.Append(_et);
             else FormatInternal(ref buffer, val);
         }
     }
@@ -223,5 +226,29 @@ public sealed class ThaiNumberTextFormatter
         }
         return buffer.AsString();
     }
+}
+
+public sealed record ThaiNumberTextFormatterOptions(ThaiNumberTextFormatFlags FormatFlags = ThaiNumberTextFormatFlags.Default)
+{
+    public static ThaiNumberTextFormatterOptions Default { get; } = new();
+    public static ThaiNumberTextFormatterOptions EtWithTensOnly { get; } = new(ThaiNumberTextFormatFlags.EtWithTensOnly);
+}
+
+[Flags]
+public enum ThaiNumberTextFormatFlags
+{
+    /// <summary>
+    /// ค่าตั้งต้น จะใช้เอ็ดเสมอ (ร้อยเอ็ด พันเอ็ด ล้านเอ็ด ร้อยเอ็ดล้าน ฯลฯ)
+    /// ซึ่งเป็นรูปแบบที่ราชบัณฑิตยสภาแนะนำ
+    /// </summary>
+    Default = 0,
+
+    /// <summary>
+    /// ใช้เอ็ดกับหลักสิบเท่านั้น (ยี่สิบเอ็ด-เก้าสิบเอ็ด) ที่เหลือจะเป็นหนึ่ง เช่น หนึ่งร้อยหนึ่ง
+    /// </summary>
+    EtWithTensOnly = 1,
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    TotalPerm = EtWithTensOnly * 2,
 }
 
