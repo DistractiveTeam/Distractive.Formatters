@@ -39,5 +39,8 @@ jobs:
     - name: Test
       run: dotnet test "$SOLUTION_NAME" -c Release --no-build --verbosity normal
 
+    - name: Pack
+      run: dotnet pack "$SOLUTION_NAME" -c Release --no-build --output .
+
     - name: Publish to nuget.org
       run: dotnet nuget push "*.nupkg" --api-key ${{ secrets.NUGET_ORG_API_KEY }} --source https://api.nuget.org/v3/index.json
