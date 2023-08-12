@@ -4,7 +4,6 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Distractive.Formatters;
@@ -20,9 +19,11 @@ public sealed class ThaiNumberTextFormatter
         new[] { "", "หนึ่งหมื่น", "สองหมื่น", "สามหมื่น", "สี่หมื่น", "ห้าหมื่น", "หกหมื่น", "เจ็ดหมื่น", "แปดหมื่น", "เก้าหมื่น" },
         new[] { "", "หนึ่งพัน", "สองพัน", "สามพัน", "สี่พัน", "ห้าพัน", "หกพัน", "เจ็ดพัน", "แปดพัน", "เก้าพัน" },
         new[] { "", "หนึ่งร้อย", "สองร้อย", "สามร้อย", "สี่ร้อย", "ห้าร้อย", "หกร้อย", "เจ็ดร้อย", "แปดร้อย", "เก้าร้อย" },
-        new[] { "", "สิบ", "ยี่สิบ", "สามสิบ", "สี่สิบ", "ห้าสิบ", "หกสิบ", "เจ็ดสิบ", "แปดสิบ", "เก้าสิบ" },
-        new[] { "", "เอ็ด", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า" },
     };
+    private static readonly string[] _w100k = _numberGrid[0];
+    private static readonly string[] _w10k = _numberGrid[1];
+    private static readonly string[] _w1k = _numberGrid[2];
+    private static readonly string[] _w100 = _numberGrid[3];
     private static readonly string[] _numbers = new[] {
         "", "หนึ่ง", "สอง", "สาม", "สี่", "ห้า", "หก", "เจ็ด", "แปด", "เก้า",
         "สิบ", "สิบเอ็ด", "สิบสอง", "สิบสาม", "สิบสี่", "สิบห้า", "สิบหก", "สิบเจ็ด", "สิบแปด", "สิบเก้า",
@@ -86,22 +87,13 @@ public sealed class ThaiNumberTextFormatter
     }
 
 
-    private static ReadOnlySpan<int> BuildDigits(Span<int> buffer, int value)
+
+
+    private void FormatInternal(scoped ref CharBuffer buffer, int value)
     {
-        Debug.Assert(value >= 0);
+        Debug.Assert(value > 0);
+        Debug.Assert(value < 1_000_000);
 
-        int i = buffer.Length;
-        do
-        {
-            value = Math.DivRem(value, 10, out var r);
-            buffer[--i] = r;
-        } while (value > 0);
-
-        return buffer[i..];
-    }
-
-    private void FormatInternal(scoped ref CharBuffer buffer, long value)
-    {
         if (value == 0) return;
         if (value < 100)
         {
@@ -109,23 +101,16 @@ public sealed class ThaiNumberTextFormatter
             return;
         }
 
-        Debug.Assert(value > 0);
-        Debug.Assert(value < 1_000_000);
-
-        Span<int> digits = stackalloc int[6];
-        digits.Clear();
-        BuildDigits(digits, (int)value);
-        //var digits = BuildDigits(stackalloc int[6], value);
-        Debug.Assert(digits.Length > 0);
-        Debug.Assert(digits.Length <= 6);
-        var grid = _numberGrid;
-        for (int i = 0; i < 4; i++)
-        {
-            var n = digits[i];
-            buffer.Append(grid[i][n]);
-        }
+        var a = _w100k[value / 100_000 % 10];
+        var b = _w10k[value / 10_000 % 10];
+        var c = _w1k[value / 1_000 % 10];
+        var d = _w100[value / 100 % 10];
         var p = value % 100;
         var s = p == 1 ? _et : _numbers[p];
+        buffer.Append(a);
+        buffer.Append(b);
+        buffer.Append(c);
+        buffer.Append(d);        
         buffer.Append(s);
     }
 
@@ -145,8 +130,8 @@ public sealed class ThaiNumberTextFormatter
         const long mil = 1_000_000;
         long b3 = value;
         long b2 = value / mil;
-        long b1 = value / mil / mil;
-        long b0 = value / mil / mil / mil;
+        long b1 = value / (mil * mil);
+        long b0 = value / (mil * mil * mil);
         Debug.Assert(b0 < 100);
 
         if (b0 > 0)
@@ -157,19 +142,19 @@ public sealed class ThaiNumberTextFormatter
 
         if (b1 > 0 || fillMil)
         {
-            FormatInternal(ref buffer, b1 % mil);
+            FormatInternal(ref buffer, (int)(b1 % mil));
             buffer.Append("ล้าน");
         }
 
         if (b2 > 0 || fillMil)
         {
-            FormatInternal(ref buffer, b2 % mil);
+            FormatInternal(ref buffer, (int)(b2 % mil));
             buffer.Append("ล้าน");
         }
 
         if (b3 > 0)
         {
-            var val = b3 % mil;
+            var val = (int)(b3 % mil);
             if (val == 1) buffer.Append(_et);
             else FormatInternal(ref buffer, val);
         }
