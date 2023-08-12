@@ -91,15 +91,17 @@ public sealed class ThaiNumberTextFormatter
 
     private void FormatInternal(scoped ref CharBuffer buffer, int value)
     {
+        if (value == 0) return;
         Debug.Assert(value > 0);
         Debug.Assert(value < 1_000_000);
-
-        if (value == 0) return;
+        
         if (value < 100)
         {
             buffer.Append(_numbers[value]);
             return;
         }
+
+        Debug.Assert(value >= 100);
 
         var a = _w100k[value / 100_000 % 10];
         var b = _w10k[value / 10_000 % 10];
