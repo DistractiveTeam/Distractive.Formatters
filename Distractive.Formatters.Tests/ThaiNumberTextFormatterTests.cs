@@ -41,26 +41,6 @@ namespace Distractive.Formatters.Tests
             Assert.Equal(formattedText, text);
         }
 
-        private ref struct CustomRef
-        {
-            public CustomRef(Span<char> outputs)
-            {
-                Outputs = outputs;
-                Position = 0;
-            }
-            //public bool IsValid;
-            //public Span<int> Inputs;
-            public readonly Span<char> Outputs { get; }
-            public int Position;
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Write(string s)
-            {
-                s.CopyTo(Outputs[Position..]);
-                Position += s.Length;
-            }
-        }
-
         [Theory]
         [InlineData(-1, "ลบหนึ่งบาทถ้วน")]
         [InlineData(-1_000, "ลบหนึ่งพันบาทถ้วน")]
