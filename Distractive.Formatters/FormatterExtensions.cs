@@ -34,7 +34,7 @@ namespace Distractive.Formatters
         public static string ToThaiWords(this long value, bool useEtWithTensOnly) 
             => _formatters[useEtWithTensOnly ? 1 : 0].Format(value);
 
-        public static string ToThaiWords(this int value, bool useEtWithTensOnly) => ToThaiWords(value, useEtWithTensOnly);
+        public static string ToThaiWords(this int value, bool useEtWithTensOnly) => ToThaiWords((long)value, useEtWithTensOnly);
 
         public static string ToBahtText(this decimal value,
             bool useEtWithTensOnly) => _formatters[useEtWithTensOnly ? 1 : 0].GetBahtText(value);
