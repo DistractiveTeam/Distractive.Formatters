@@ -11,7 +11,7 @@
 		<RepositoryUrl>https://github.com/DistractiveTeam/Distractive.Formatters.git</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
-		<PackageVersion>1.1.0</PackageVersion>
+		<PackageVersion>1.1.1</PackageVersion>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	</PropertyGroup>
